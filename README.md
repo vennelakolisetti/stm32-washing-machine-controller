@@ -167,6 +167,82 @@ Press **B1** to return to idle (everything off), then **B1** again to arm.
 5. Connect the board over USB (ST-LINK) and click **Run** or **Debug**.
 6. Press **F8** (or Resume) to run the program.
 
+## 🧩 Peripheral Configuration (CubeMX)
+
+`main.c` initialises all peripherals itself, so the settings below only need to match when you
+create the project in STM32CubeIDE / CubeMX. In **Project Manager → Code Generator**, untick
+"Generate peripheral initialization as a pair of .c/.h files" so the generated code does not clash
+with the `MX_..._Init()` functions in `main.c`.
+
+### Clock
+
+| Setting | Value |
+|---|---|
+| Clock source | HSI 16 MHz |
+| PLL (M / N / P / Q) | 16 / 336 / 4 / 7 |
+| SYSCLK / HCLK | 84 MHz |
+| APB1 (÷2) / APB2 (÷1) | 42 MHz / 84 MHz (APB1 timers run at 84 MHz) |
+| Flash latency | 2 wait states |
+| Voltage scale | Scale 2 |
+
+### GPIO
+
+| Pin | Mode | Pull | Speed | Use |
+|---|---|---|---|---|
+| PC13 | External interrupt, falling edge | No pull (board pull-up) | – | B1 blue button |
+| PA0 | External interrupt, rising edge | Pull-down | – | Start |
+| PA1 | External interrupt, rising edge | Pull-down | – | WLH |
+| PA4 | External interrupt, rising edge | Pull-down | – | TempR |
+| PC7 | External interrupt, rising edge | Pull-down | – | WLLow |
+| PB6 | External interrupt, rising edge | Pull-down | – | Stop |
+| PA5 | Output push-pull | No pull | Low | LD2 |
+| PA8 | Output push-pull | No pull | Low | Valve |
+| PA10 | Output push-pull | No pull | Low | Heater |
+| PB4 | Output push-pull | No pull | Low | Door lock |
+| PB5 | Output push-pull | No pull | Low | Pump |
+| PB10 | Alternate function AF1 (TIM2_CH3) | No pull | Low | Motor PWM |
+| PA2 / PA3 | Alternate function (USART2 TX / RX) | – | – | ST-LINK virtual COM port |
+
+All outputs start low (safe state).
+
+### Timers
+
+| Timer | Role | Prescaler | Period (ARR) | Settings |
+|---|---|---|---|---|
+| **TIM2** | Motor LED PWM (PB10, channel 3) | 83 (1 MHz, 1 µs per tick) | 499999 (0.5 s) | PWM mode 1, pulse 0, polarity high. Period and duty are changed at run time by `SetMotorPwm()` |
+| **TIM3** | One-shot interval timer for wash steps and fault timeout | 8399 (10 kHz, 0.1 ms per tick) | 9 at start | Up counter, update interrupt enabled. Period is set at run time by `ArmWashTimer()` (16-bit, max 6.5 s) |
+
+TIM1 is not used.
+
+### USART2
+
+115200 baud, 8 data bits, no parity, 1 stop bit, no flow control, TX and RX. Used for status messages
+on the ST-LINK virtual COM port.
+
+### NVIC (interrupts)
+
+| Interrupt | Priority (preempt / sub) | Source |
+|---|---|---|
+| EXTI line 0 | 0 / 0 | Start (PA0) |
+| EXTI line 1 | 0 / 0 | WLH (PA1) |
+| EXTI line 4 | 0 / 0 | TempR (PA4) |
+| EXTI lines 5 to 9 | 0 / 0 | Stop (PB6), WLLow (PC7) |
+| EXTI lines 10 to 15 | 0 / 0 | B1 (PC13) |
+| TIM3 global | 1 / 0 | Interval timer (lower priority than the buttons) |
+
+Each handler in `stm32f4xx_it.c` must call the HAL, for example
+`HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0)` in `EXTI0_IRQHandler`, pins 6 and 7 in `EXTI9_5_IRQHandler`,
+pin 13 in `EXTI15_10_IRQHandler`, and `HAL_TIM_IRQHandler(&htim3)` in `TIM3_IRQHandler`.
+CubeMX generates these when the interrupts are enabled.
+
+### Other
+
+| Item | Setting |
+|---|---|
+| Sleep mode | `WFI` between events (`HAL_PWR_EnterSLEEPMode`), woken by any interrupt |
+| Independent watchdog | Set directly in registers: LSI 32 kHz ÷ 64, reload 1000, about 2 s timeout. Refreshed every loop pass. Frozen while debugging |
+| SysTick | 1 ms HAL tick (default) |
+
 ## 🚀 Features
 
 - Arm / disarm with the blue button, shown on LD2
