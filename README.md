@@ -55,9 +55,9 @@ It is fully interrupt driven and sleeps between events:
 
 ## 🖼️ System Overview
 
-![System Overview](images/board_annotated.jpg)
+![System Overview](board_annotated.jpg)
 
-*Annotated photo of the NUCLEO-F401RE and breadboard. The original photo is `images/board.jpg`.*
+*Annotated photo of the NUCLEO-F401RE and breadboard. The original photo is `board.jpg`.*
 
 The NUCLEO-F401RE (right) is wired to a breadboard (left) carrying:
 
@@ -111,14 +111,14 @@ reporting that condition.
 
 ### Main GRAFCET
 
-![Main GRAFCET](images/grafcet_main.png)
+![Main GRAFCET](grafcet_main.png)
 
 B1 must be pressed first to arm the controller. When the controller returns to Idle it disarms,
 so B1 has to be pressed again before the next cycle.
 
 ### Wash sub-GRAFCET (inside x3)
 
-![Wash sub-GRAFCET](images/grafcet_wash.png)
+![Wash sub-GRAFCET](grafcet_wash.png)
 
 The left / pause / right / pause loop runs 3 times (`WASH_CYCLE_COUNT`), then the rinse. Pressing
 **Stop** at any point leaves the wash and goes straight to Drain.
@@ -127,13 +127,12 @@ The left / pause / right / pause loop runs 3 times (`WASH_CYCLE_COUNT`), then th
 
 ```
 stm32-washing-machine-controller/
-├── main.c        controller source code
-├── README.md                  this file
-└── images/
-    ├── board.jpg              original photo of the board and breadboard
-    ├── board_annotated.jpg    annotated photo (System Overview)
-    ├── grafcet_main.png       main GRAFCET flowchart
-    └── grafcet_wash.png       wash sub-GRAFCET flowchart
+├── main.c                 controller source code
+├── README.md              this file
+├── board.jpg              original photo of the board and breadboard
+├── board_annotated.jpg    annotated photo (System Overview)
+├── grafcet_main.png       main GRAFCET flowchart
+└── grafcet_wash.png       wash sub-GRAFCET flowchart
 ```
 
 The main logic is implemented in a single file: `main.c`
