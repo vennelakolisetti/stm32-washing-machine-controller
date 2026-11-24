@@ -1,6 +1,6 @@
 # STM32 Washing Machine Controller
 
-Embedded system project (EG7014 Assignment 1) using the **NUCLEO-F401RE** (STM32F401RE) board.
+Embedded system project using the **NUCLEO-F401RE** (STM32F401RE) board.
 
 ## 📌 Project Overview
 
